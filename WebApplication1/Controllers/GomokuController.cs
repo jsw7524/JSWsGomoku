@@ -53,7 +53,7 @@ namespace WebApplication1.Controllers
                 return Json(new { yAI = posY, xAI = posX+1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet); 
             }
             myAI.LoadWeightTable();
-            myAI.myTable = rule.myTable;
+            myAI.MyTable = rule.myTable;
             Tuple<int, int> moveAI = myAI.NextMove((side == 1) ? -1 : 1);
             rule.myTable[moveAI.Item1, moveAI.Item2] = (side == 1) ? -1 : 1;
             roundCount++;

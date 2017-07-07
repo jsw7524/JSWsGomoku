@@ -31,11 +31,11 @@ namespace WebApplication1.Helper
             internal int score;
         };
 
-        public int[,] myTable;
+        public int[,] MyTable;
 
         private Dictionary<string, string[]> weightTable;
 
-        private const int depthLimit = 4;
+        private const int DepthLimit = 8;
 
         public void LoadWeightTable()
         {
@@ -46,7 +46,7 @@ namespace WebApplication1.Helper
 
         private int Evaluate(int y, int x, int c, int[,] testBoard)
         {
-            int[,] Direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
+            int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
             int sum = 0;
             char[] pattern = new char[9];
             for (int I = 0; I < 4; I++)
@@ -54,9 +54,9 @@ namespace WebApplication1.Helper
                 for (int K = -4; K < 5; K++)
                 {
                     int j = K + 4;
-                    if ((y + K * Direct[I, 0] >= 0) && (y + K * Direct[I, 0] < 15) && (x + K * Direct[I, 1] >= 0) && (x + K * Direct[I, 1] < 15))
+                    if ((y + K * direct[I, 0] >= 0) && (y + K * direct[I, 0] < 15) && (x + K * direct[I, 1] >= 0) && (x + K * direct[I, 1] < 15))
                     {
-                        switch (testBoard[(y + K * Direct[I, 0]), (x + K * Direct[I, 1])])
+                        switch (testBoard[(y + K * direct[I, 0]), (x + K * direct[I, 1])])
                         {
                             case 0:
                                 pattern[j] = '_';
@@ -82,12 +82,39 @@ namespace WebApplication1.Helper
             return sum;
         }
 
-        private int MinMax(int[,] testBoard, int side, int depth, int alpha, int beta)
+
+        private int[,] RangeUpdate(int y, int x, int c, int[,] testBoard, int[,] scoreBoard)
         {
-            if (depth < depthLimit)
+            int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
+            int[,] newScoreBoard = scoreBoard.Clone() as int[,];
+            for (int I = 0; I < 4; I++)
             {
-                Move[] MyMove = new Move[256];
+                for (int K = -4; K < 5; K++)
+                {
+                    if ((y + K * direct[I, 0] >= 0) && (y + K * direct[I, 0] < 15) && (x + K * direct[I, 1] >= 0) && (x + K * direct[I, 1] < 15))
+                    {
+                        if (testBoard[y + K * direct[I, 0], x + K * direct[I, 1]] == 0)
+                        {
+                            testBoard[y + K * direct[I, 0], x + K * direct[I, 1]] = c;
+                            newScoreBoard[y + K * direct[I, 0], x + K * direct[I, 1]] = Evaluate(y + K * direct[I, 0], x + K * direct[I, 1], c, testBoard);
+                            testBoard[y + K * direct[I, 0], x + K * direct[I, 1]] = 0;
+                        }
+                    }
+                }
+            }
+            return newScoreBoard;
+        }
+
+        private int MinMax(int y, int x, int[,] testBoard, int side, int depth, int alpha, int beta, int[,] whiteScores, int[,] blackScores)
+        {
+            int[,] newWhiteScores = RangeUpdate(y, x, 1, testBoard, whiteScores);
+            int[,] newBlackScores = RangeUpdate(y, x, -1, testBoard, blackScores);
+            if (depth < DepthLimit)
+            {
+                Move[] myMove = new Move[256];
                 int index = 0;
+
+
                 for (int I = 0; I < 15; I++)
                 {
                     for (int J = 0; J < 15; J++)
@@ -97,13 +124,13 @@ namespace WebApplication1.Helper
                             int selfScore = 0;
                             int enemyScore = 0;
                             testBoard[J, I] = side;
-                            selfScore = Evaluate(J, I, side, testBoard);  //yx
+                            selfScore = (side == 1) ? newWhiteScores[J, I] : newBlackScores[J, I];
                             testBoard[J, I] = (side == 1) ? -1 : 1;
-                            enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, testBoard);
+                            enemyScore = (side == 1) ? newBlackScores[J, I] : newWhiteScores[J, I];
                             testBoard[J, I] = 0;
-                            MyMove[index].x = I;
-                            MyMove[index].y = J;
-                            MyMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
+                            myMove[index].x = I;
+                            myMove[index].y = J;
+                            myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                             /**/
                             if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
                             {
@@ -114,15 +141,15 @@ namespace WebApplication1.Helper
                         }
                     }
                 }
-                Array.Sort(MyMove, new MaxScoreFirstComparer());
+                Array.Sort(myMove, new MaxScoreFirstComparer());
                 int max = int.MinValue;
                 int min = int.MaxValue;
                 for (int I = 0; I < index && I < 10; I++)
                 {
                     int selfScore = 0;
-                    testBoard[(MyMove[I].y), (MyMove[I].x)] = side;
-                    selfScore = MinMax(testBoard, (side == 1 ? -1 : 1), depth + 1, alpha, beta);
-                    testBoard[(MyMove[I].y), (MyMove[I].x)] = 0;
+                    testBoard[(myMove[I].y), (myMove[I].x)] = side;
+                    selfScore = MinMax(myMove[I].y, myMove[I].x, testBoard, (side == 1 ? -1 : 1), depth + 1, alpha, beta, newWhiteScores, newBlackScores);
+                    testBoard[(myMove[I].y), (myMove[I].x)] = 0;
                     if (side == 1)
                     {
                         if (selfScore > max)
@@ -161,21 +188,27 @@ namespace WebApplication1.Helper
                     {
                         if (testBoard[J, I] == 0)
                         {
-                            int selfScore = 0;
-                            int enemyScore = 0;
-                            testBoard[J, I] = (side == 1) ? -1 : 1;
-                            enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, testBoard);
-                            sumOfScores += enemyScore;
-                            testBoard[J, I] = side;
-                            selfScore = Evaluate(J, I, side, testBoard);
-                            sumOfScores += selfScore;
-                            testBoard[J, I] = 0;
-                            /**/
-                            if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
+                            sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
+                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
-                            /**/
+
+                            //int selfScore = 0;
+                            //int enemyScore = 0;
+                            //testBoard[J, I] = (side == 1) ? -1 : 1;
+                            //enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, testBoard);
+                            //sumOfScores += enemyScore;
+                            //testBoard[J, I] = side;
+                            //selfScore = Evaluate(J, I, side, testBoard);
+                            //sumOfScores += selfScore;
+                            //testBoard[J, I] = 0;
+                            ///**/
+                            //if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
+                            //{
+                            //    return (side == 1) ? 10000000 : -10000000;
+                            //}
+                            ///**/
                         }
                     }
                 }
@@ -183,33 +216,39 @@ namespace WebApplication1.Helper
             }
         }
 
-        private delegate int MinMaxFunctionDelegate(int[,] testBoard, int side, int depth, int alpha, int beta);
+        private delegate int MinMaxFunctionDelegate(int y, int x, int[,] testBoard, int side, int depth, int alpha,
+            int beta, int[,] whiteScores, int[,] blackScores);
 
         public Tuple<int, int> NextMove(int side)
         {
             Move[] myMove = new Move[256];
             int index = 0;
+            int[,] newWhiteScores = new int[15, 15];
+            int[,] newBlackScores = new int[15, 15];
             for (int I = 0; I < 15; I++)
             {
                 for (int J = 0; J < 15; J++)
                 {
-                    if (myTable[J, I] == 0)
+                    if (MyTable[J, I] == 0)
                     {
                         int selfScore = 0;
                         int enemyScore = 0;
-                        myTable[J, I] = side;
-                        selfScore = Evaluate(J, I, side, myTable);  //yx
-                        myTable[J, I] = (side == 1) ? -1 : 1;
-                        enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, myTable);
-                        myTable[J, I] = 0;
+                        MyTable[J, I] = side;
+                        selfScore = Evaluate(J, I, side, MyTable);  //yx
+                        MyTable[J, I] = (side == 1) ? -1 : 1;
+                        enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, MyTable);
+                        MyTable[J, I] = 0;
                         myMove[index].x = I;
                         myMove[index].y = J;
                         myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
+                        newWhiteScores[J, I] = (side == 1) ? selfScore : enemyScore;
+                        newBlackScores[J, I] = (side == 1) ? enemyScore : selfScore;
                         if (Math.Abs(selfScore) >= int.Parse(weightTable["____wwwww"][1]))
                         {
                             return new Tuple<int, int>(myMove[index].y, myMove[index].x);
                         }
                         index++;
+
                     }
                 }
             }
@@ -217,13 +256,13 @@ namespace WebApplication1.Helper
             int max = int.MinValue;
             int min = int.MaxValue;
             MinMaxFunctionDelegate minMaxFunctionDelegate = new MinMaxFunctionDelegate(MinMax);
-            List<KeyValuePair<int,IAsyncResult>> asyncResultList = new List<KeyValuePair<int,IAsyncResult>>();
-            for (int I = 0; I < index && I < 10; I++)
+            List<KeyValuePair<int, IAsyncResult>> asyncResultList = new List<KeyValuePair<int, IAsyncResult>>();
+            for (int I = 0; I < index && I < 8; I++)
             {
-                int[,] NextBoard = (int[,])myTable.Clone();
-                NextBoard[(myMove[I].y), (myMove[I].x)] = side;
-                asyncResultList.Add(new KeyValuePair<int, IAsyncResult>(I, minMaxFunctionDelegate.BeginInvoke(NextBoard, (side == 1 ? -1 : 1), 0, max, min, null, null)));
-                if ((I+1) % (Environment.ProcessorCount) == 0)
+                int[,] nextBoard = (int[,])MyTable.Clone();
+                nextBoard[(myMove[I].y), (myMove[I].x)] = side;
+                asyncResultList.Add(new KeyValuePair<int, IAsyncResult>(I, minMaxFunctionDelegate.BeginInvoke(myMove[I].y, myMove[I].x, nextBoard, (side == 1 ? -1 : 1), 0, max, min, newWhiteScores, newBlackScores, null, null)));
+                if ((I + 1) % (Environment.ProcessorCount) == 0)
                 {
                     WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
                 }
@@ -232,7 +271,7 @@ namespace WebApplication1.Helper
             {
                 WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
             }
-            Array.Sort(myMove, 0, 10, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
+            Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
             return new Tuple<int, int>(myMove[0].y, myMove[0].x);
         }
 
