@@ -170,6 +170,8 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\Game.cs" />
+    <Compile Include="Controllers\GameResult.cs" />
     <Compile Include="Controllers\GomokuController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
@@ -177,7 +179,13 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helper\AI.cs" />
+    <Compile Include="Helper\MaxScoreFirstComparer.cs" />
+    <Compile Include="Helper\MinMaxData.cs" />
+    <Compile Include="Helper\MinScoreFirstComparer.cs" />
+    <Compile Include="Helper\Move.cs" />
+    <Compile Include="Helper\NextMoveData.cs" />
     <Compile Include="Helper\Rule.cs" />
+    <Compile Include="Helper\StateManager.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
@@ -191,6 +199,12 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Helper\Data.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Helper\JSW.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Images\BlackChess.png" />
     <Content Include="Images\WhiteChess.png" />
     <Content Include="Scripts\bootstrap.js" />
