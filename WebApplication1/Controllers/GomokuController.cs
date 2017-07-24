@@ -43,25 +43,19 @@ namespace WebApplication1.Controllers
             }
 
             //AI Part
-            if (game.IsNewGame)
-            {
-                game.Move(posY, posX + 1, aiSide);
+            var move = game.IsNewGame
+                ? game.Move(posY, posX + 1, aiSide)
+                : await game.AiMove(aiSide);
 
-                var gameResult = new GameResult(posY, posX + 1, aiSide, 0, "");
-                return Json(gameResult, JsonRequestBehavior.AllowGet);
-            }
-
-            var nextMove = await game.AiMove(aiSide);
-
-            if (game.ComputerWins(nextMove, aiSide))
+            if (game.ComputerWins(move, aiSide))
             {
                 game.Rule1.ResetGame();
 
-                var computerWinsResult = new GameResult(nextMove.Item1, nextMove.Item2, palyerSide, ComputerWinsFlag, "Computer wins.");
+                var computerWinsResult = new GameResult(move.Item1, move.Item2, palyerSide, ComputerWinsFlag, "Computer wins.");
                 return Json(computerWinsResult, JsonRequestBehavior.AllowGet); // AI wins the game.
             }
 
-            var result = new GameResult(nextMove.Item1, nextMove.Item2, palyerSide, 0, "");
+            var result = new GameResult(move.Item1, move.Item2, palyerSide, 0, "");
             return Json(result, JsonRequestBehavior.AllowGet);
         }
 

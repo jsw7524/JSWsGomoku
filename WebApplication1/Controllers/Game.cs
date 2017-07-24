@@ -79,6 +79,13 @@ namespace WebApplication1.Controllers
                     : Start(gameId);
         }
 
+        public Tuple<int, int> Move(int posY, int posX, int palyerSide)
+        {
+            Rule1.myTable[posY, posX] = palyerSide;
+            RoundCount++;
+            return Tuple.Create(posY, posX);
+        }
+
         public async Task<Tuple<int, int>> AiMove(int aiSide)
         {
             MyAi.LoadWeightTable();
@@ -103,12 +110,6 @@ namespace WebApplication1.Controllers
         {
             var playerWins = Rule1.Referee(posY, posX, palyerSide);
             return playerWins;
-        }
-
-        public void Move(int posY, int posX, int palyerSide)
-        {
-            Rule1.myTable[posY, posX] = palyerSide;
-            RoundCount++;
         }
     }
 }
