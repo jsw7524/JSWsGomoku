@@ -44,15 +44,16 @@
             color: red;
             font-size: 40px;
         }
+
         #interactionLockMask {
             height: 600px;
-            width: 600px; 
+            width: 600px;
             opacity: 0.0;
-            background-color: white;   
+            background-color: white;
             position: absolute;
             left: 0px;
-            top: 0px;    
-            visibility: hidden;   
+            top: 0px;
+            visibility: hidden;
         }
     </style>
     <meta name="viewport" content="width=device-width" />
@@ -82,6 +83,9 @@
         </div>
         <div id="interactionLockMask">
         </div>
+        <div id="TurnMessage">
+            Computer is thinking...
+        </div>
     </div>
     <script>
         chessCounter = 0;
@@ -108,31 +112,34 @@
         }
 
         $(document).ready(function () {
+            $('#TurnMessage').hide();
             $('#TheBoard td').on("click",
-            function () {
-                if ("" == this.style["background-image"]) {
-                    $('#interactionLockMask').css('visibility', 'visible');
-                    PutChessByObj(this);
-                    var args = this.id.split("+");
-                    $.getJSON("/Gomoku/AI",
-                        { posY: args[0], posX: args[1] },
-                        function (data) {
-                            PutChessByXY(data.yAI, data.xAI);
-                            if (99 == data.flag) {
-                                $('#GameMessage #MessageText').text(data.message);
-                                $('#GameMessage').css('visibility', 'visible');
+                function () {
+                    if ("" == this.style["background-image"]) {
+                        $('#interactionLockMask').css('visibility', 'visible');
+                        $('#TurnMessage').show();
+                        PutChessByObj(this);
+                        var args = this.id.split("+");
+                        $.getJSON("/Gomoku/AI",
+                            { posY: args[0], posX: args[1] },
+                            function (data) {
+                                PutChessByXY(data.yAI, data.xAI);
+                                switch (data.flag) {
+                                    case  99:
+                                    case -99:
+                                        $('#GameMessage #MessageText').text(data.message);
+                                        $('#GameMessage').css('visibility', 'visible');
+                                        break;
+                                default:
+                                }
+                                $('#interactionLockMask').css('visibility', 'hidden');
+                                $('#TurnMessage').hide();
                             }
-                            else if (-99 == data.flag) {
-                                $('#GameMessage #MessageText').text(data.message);
-                                $('#GameMessage').css('visibility', 'visible');
-                            }
-                            $('#interactionLockMask').css('visibility', 'hidden');
-                        }
-                    );
-                }
-            });
+                        );
+                    }
+                });
             $('#ButtonOK').on("click", function () {
-                location.reload();
+                location.replace("/Gomoku/Play");
             });
         });
     </script>

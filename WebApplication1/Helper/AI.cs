@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -9,7 +10,6 @@ namespace WebApplication1.Helper
 {
     public class AI
     {
-
         private class MinScoreFirstComparer : IComparer<Move>
         {
             public int Compare(Move x, Move y)
@@ -35,8 +35,9 @@ namespace WebApplication1.Helper
 
         private Dictionary<string, string[]> weightTable;
 
-        private const int DepthLimit = 8;
-
+        public int DepthLimit = 6;
+        public TimeSpan timeSpanTotal;
+        public int roundCount;
         public void LoadWeightTable()
         {
             var patterns = File.ReadAllLines(HttpContext.Current.Server.MapPath("~/Helper/JSW.dll"));
@@ -134,7 +135,7 @@ namespace WebApplication1.Helper
                             /**/
                             if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
                             {
-                                return (side == 1) ? 10000000 : -10000000;
+                                return (side == 1) ? 100000000 : -100000000;
                             }
                             /**/
                             index++;
@@ -142,8 +143,8 @@ namespace WebApplication1.Helper
                     }
                 }
                 Array.Sort(myMove, new MaxScoreFirstComparer());
-                int max = int.MinValue;
-                int min = int.MaxValue;
+                int max = -100000000;
+                int min = 100000000;
                 for (int I = 0; I < index && I < 10; I++)
                 {
                     int selfScore = 0;
@@ -189,26 +190,10 @@ namespace WebApplication1.Helper
                         if (testBoard[J, I] == 0)
                         {
                             sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
-                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
+                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : Math.Abs(newBlackScores[J, I])) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
                             {
-                                return (side == 1) ? 10000000 : -10000000;
+                                return (side == 1) ? 100000000 : -100000000;
                             }
-
-                            //int selfScore = 0;
-                            //int enemyScore = 0;
-                            //testBoard[J, I] = (side == 1) ? -1 : 1;
-                            //enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, testBoard);
-                            //sumOfScores += enemyScore;
-                            //testBoard[J, I] = side;
-                            //selfScore = Evaluate(J, I, side, testBoard);
-                            //sumOfScores += selfScore;
-                            //testBoard[J, I] = 0;
-                            ///**/
-                            //if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
-                            //{
-                            //    return (side == 1) ? 10000000 : -10000000;
-                            //}
-                            ///**/
                         }
                     }
                 }
@@ -221,6 +206,8 @@ namespace WebApplication1.Helper
 
         public Tuple<int, int> NextMove(int side)
         {
+            //Stopwatch stopWatch = new Stopwatch();
+            //stopWatch.Start();
             Move[] myMove = new Move[256];
             int index = 0;
             int[,] newWhiteScores = new int[15, 15];
@@ -253,8 +240,8 @@ namespace WebApplication1.Helper
                 }
             }
             Array.Sort(myMove, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
-            int max = int.MinValue;
-            int min = int.MaxValue;
+            int max = -100000000;
+            int min = 100000000;
             MinMaxFunctionDelegate minMaxFunctionDelegate = new MinMaxFunctionDelegate(MinMax);
             List<KeyValuePair<int, IAsyncResult>> asyncResultList = new List<KeyValuePair<int, IAsyncResult>>();
             for (int I = 0; I < index && I < 8; I++)
@@ -272,6 +259,20 @@ namespace WebApplication1.Helper
                 WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
             }
             Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
+            //stopWatch.Stop();
+            //TimeSpan timeSpan = stopWatch.Elapsed;
+            //timeSpanTotal += timeSpan;
+            //TimeSpan timeSpanAvg = new TimeSpan(timeSpanTotal.Ticks / (roundCount/2+1)); 
+            //TimeSpan timeSpan4s = new TimeSpan(0, 0,4);
+            //TimeSpan timeSpan20s = new TimeSpan(0, 0, 20);
+            //if (timeSpanAvg < timeSpan4s)
+            //{
+            //   DepthLimit+=2;
+            //}
+            //if (timeSpanAvg > timeSpan20s)
+            //{
+            //   DepthLimit-=2;
+            //}
             return new Tuple<int, int>(myMove[0].y, myMove[0].x);
         }
 
