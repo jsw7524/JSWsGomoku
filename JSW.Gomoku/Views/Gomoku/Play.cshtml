@@ -1,0 +1,172 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <style>
+        /** {
+            margin: 0px auto;
+        }*/
+        html, body {
+            height: 100%;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        table {
+            border-spacing: 0;
+            margin-bottom: 1em;
+        }
+
+        #GameMessage {
+            text-align: center;
+            opacity: 0.8;
+            background-color: white;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            visibility: hidden;
+        }
+
+        #MessageText {
+            color: red;
+            font-size: 40px;
+        }
+
+        #ButtonOK {
+            color: red;
+            font-size: 40px;
+        }
+
+        #interactionLockMask {
+            height: 600px;
+            width: 600px;
+            opacity: 0.0;
+            background-color: white;
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            visibility: hidden;
+        }
+    </style>
+    <style>
+        .centered {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+    <meta name="viewport" content="width=device-width" />
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <title>JSW's Gomoku</title>
+</head>
+<body>
+    <div id="wholeBody" class="wrapper">
+        <div class="centered">
+            <table id="TheBoard" style="width: 450px;height:450px">
+                @{
+                    for (var row = 0; row < 15; row++)
+                    {
+                        <tr height="6%">
+                            @for (var col = 0; col < 15; col++)
+                            {
+                                <td id="@(row+"+"+col)" width="6%"></td>
+                            }
+                        </tr>
+                    }
+                }
+            </table>
+
+            <div>
+                GitHub: <a href="https://github.com/jsw7524/JSWsGomoku" target="_blank">https://github.com/jsw7524/JSWsGomoku</a>
+            </div>
+
+            <div id="GameMessage">
+                <p id="MessageText">Hello wolrd!</p>
+                <button type="button" id="ButtonOK">OK</button>
+            </div>
+
+            <div id="interactionLockMask">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var chessCounter = 0;
+        var interactionLock = 0;
+        var thinking = false;
+
+        function PutChessByObj(e) {
+            if (chessCounter % 2 == 0) {
+                $(e).css("background", "url('/Images/BlackChess.png') no-repeat");
+                $(e).css("background-size", "cover");
+            }
+            else {
+                $(e).css("background", "url('/Images/WhiteChess.png') no-repeat");
+                $(e).css("background-size", "cover");
+            }
+            chessCounter++;
+        }
+
+        function PutChessByXY(y, x) {
+            console.log(x + "," + y);
+            $('#TheBoard td').css('border-color', 'black');
+            var td = document.getElementById(y + "+" + x);
+            $(td).css('border-style', 'solid');
+            $(td).css('border-color', 'red');
+            $(td).css('border-width', '1px');
+            PutChessByObj(td);
+            thinking = false;
+        }
+
+        $(document).ready(function () {
+            $.ajaxSetup({ cache: false });
+            $('#TheBoard td').on("click", function (e) {
+                e.preventDefault();
+                if (thinking) {
+                    alert("AI is thinking.");
+                    return;
+                }
+                thinking = true;
+                if ("" === this.style["background-image"]) {
+                    $('#interactionLockMask').css('visibility', 'visible');
+                    PutChessByObj(this);
+                    var args = this.id.split("+");
+                    $.getJSON("/Gomoku/AI",
+                        {
+                            posY: args[0],
+                            posX: args[1]
+                        },
+                        function (data) {
+                            PutChessByXY(data.yAI, data.xAI);
+                            if (99 === data.flag) {
+                                $('#GameMessage #MessageText').text(data.message);
+                                $('#GameMessage').css('visibility', 'visible');
+                            }
+                            else if (-99 === data.flag) {
+                                $('#GameMessage #MessageText').text(data.message);
+                                $('#GameMessage').css('visibility', 'visible');
+                            }
+                            $('#interactionLockMask').css('visibility', 'hidden');
+                        }
+                    );
+                }
+            });
+
+            $('#ButtonOK').on("click", function () {
+                location.reload();
+            });
+        });
+    </script>
+</body>
+</html>
