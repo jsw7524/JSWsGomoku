@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,6 +7,8 @@ namespace JSW.Gomoku.Domain
 {
     public class GameSession : Dictionary<Guid, Game>
     {
+        public int OnlinePlayers => CountOnlinePlayers();
+        public int ExpiredSessions => CountExpiredSessions();
         private static GameSession _gameSession;
 
         public static GameSession Instance
@@ -29,6 +32,16 @@ namespace JSW.Gomoku.Domain
                 .ToList();
 
             expiredSessions.ForEach(s => _gameSession.Remove(s));
+        }
+
+        private int CountOnlinePlayers()
+        {
+            return _gameSession.Count(s => DateTime.UtcNow.Subtract(s.Value.LastActivity).TotalMinutes < 10);
+        }
+
+        private int CountExpiredSessions()
+        {
+            return _gameSession.Count(s => DateTime.UtcNow.Subtract(s.Value.LastActivity).TotalMinutes >= 10);
         }
     }
 }
