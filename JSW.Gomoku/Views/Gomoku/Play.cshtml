@@ -52,8 +52,8 @@
             opacity: 0.0;
             background-color: white;
             position: absolute;
-            left: 0px;
-            top: 0px;
+            left: 0;
+            top: 0;
             visibility: hidden;
         }
     </style>
@@ -64,6 +64,11 @@
             left: 50%;
             margin-right: -50%;
             transform: translate(-50%, -50%);
+        }
+        #spinner {
+            width: 20em;
+            height: 20em;
+            opacity: 0.5;
         }
     </style>
     <meta name="viewport" content="width=device-width" />
@@ -91,15 +96,18 @@
                 GitHub: <a href="https://github.com/jsw7524/JSWsGomoku" target="_blank">https://github.com/jsw7524/JSWsGomoku</a>
             </div>
 
-            <div id="GameMessage">
-                <p id="MessageText">Hello wolrd!</p>
-                <button type="button" id="ButtonOK">OK</button>
-            </div>
 
-            <div id="interactionLockMask">
-            </div>
+        </div>
+
+        <div id="GameMessage">
+            <p id="MessageText">Hello wolrd!</p>
+            <button type="button" id="ButtonOK">OK</button>
+        </div>
+        <div id="interactionLockMask">
         </div>
     </div>
+
+    <img class="centered" id="spinner" src="~/Images/loading-animation.gif" style="display:none;" />
 
     <script>
         var chessCounter = 0;
@@ -127,6 +135,7 @@
             $(td).css('border-width', '1px');
             PutChessByObj(td);
             thinking = false;
+            $("#spinner").hide();
         }
 
         $(document).ready(function () {
@@ -138,6 +147,7 @@
                     return;
                 }
                 thinking = true;
+                $("#spinner").show();
                 if ("" === this.style["background-image"]) {
                     $('#interactionLockMask').css('visibility', 'visible');
                     PutChessByObj(this);
