@@ -108,6 +108,7 @@
         }
 
         $(document).ready(function () {
+            $.ajaxSetup({ cache: false });
             $('#TheBoard td').on("click",
             function () {
                 if ("" == this.style["background-image"]) {

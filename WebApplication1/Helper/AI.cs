@@ -35,7 +35,7 @@ namespace WebApplication1.Helper
 
         private Dictionary<string, string[]> weightTable;
 
-        private const int DepthLimit = 8;
+        private const int DepthLimit = 6;
 
         public void LoadWeightTable()
         {
