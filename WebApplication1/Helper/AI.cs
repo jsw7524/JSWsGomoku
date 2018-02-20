@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Web;
 
@@ -35,7 +36,7 @@ namespace WebApplication1.Helper
 
         private Dictionary<string, string[]> weightTable;
 
-        private const int DepthLimit = 8;
+        private const int DepthLimit = 7;
 
         public void LoadWeightTable()
         {
@@ -43,7 +44,7 @@ namespace WebApplication1.Helper
             weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => a[0]);
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int Evaluate(int y, int x, int c, int[,] testBoard)
         {
             int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
@@ -82,7 +83,7 @@ namespace WebApplication1.Helper
             return sum;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int[,] RangeUpdate(int y, int x, int c, int[,] testBoard, int[,] scoreBoard)
         {
             int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX

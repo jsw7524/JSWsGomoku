@@ -12,8 +12,8 @@ namespace WebApplication1.Controllers
         // GET: Gomoku
         Random rand = new Random();
         Rule rule = new Rule();
-        AI myAI = new AI();
 
+        
         private int roundCount = 0;
         public ActionResult Play()
         {
@@ -52,9 +52,9 @@ namespace WebApplication1.Controllers
                 TempData["roundCount"] = roundCount;
                 return Json(new { yAI = posY, xAI = posX+1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet); 
             }
-            myAI.LoadWeightTable();
-            myAI.MyTable = rule.myTable;
-            Tuple<int, int> moveAI = myAI.NextMove((side == 1) ? -1 : 1);
+
+            MvcApplication.myAI.MyTable = rule.myTable;
+            Tuple<int, int> moveAI = MvcApplication.myAI.NextMove((side == 1) ? -1 : 1);
             rule.myTable[moveAI.Item1, moveAI.Item2] = (side == 1) ? -1 : 1;
             roundCount++;
             if (rule.Referee(moveAI.Item1, moveAI.Item2, (side == 1) ? -1 : 1))
