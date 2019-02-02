@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Web;
 
@@ -34,19 +35,20 @@ namespace WebApplication1.Helper
 
         public int[,] MyTable;
 
-        private Dictionary<string, string[]> weightTable;
+        private Dictionary<string, int> weightTable;
 
-        private const int DepthLimit = 7;
+        private const int DepthLimit = 8;
 
         public void LoadWeightTable()
         {
             var patterns = File.ReadAllLines(HttpContext.Current.Server.MapPath("~/Helper/JSW.dll"));
-            weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => a[0]);
+            weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => a[0],b=> int.Parse(b[1]));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int Evaluate(int y, int x, int c, int[,] testBoard)
         {
+
             int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
             int sum = 0;
             char[] pattern = new char[9];
@@ -78,7 +80,9 @@ namespace WebApplication1.Helper
                     }
 
                 }
-                sum += int.Parse(weightTable[new string(pattern)][1]);
+                StringBuilder sb = new StringBuilder(9);
+                sb.Append(pattern);
+                sum += (weightTable[sb.ToString()]);  ///////////???????????????????????????????????????
             }
             return sum;
         }
@@ -133,7 +137,7 @@ namespace WebApplication1.Helper
                             myMove[index].y = J;
                             myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                             /**/
-                            if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
+                            if (Math.Abs(selfScore) >= Math.Abs((weightTable["____wwwww"])))
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
@@ -190,7 +194,7 @@ namespace WebApplication1.Helper
                         if (testBoard[J, I] == 0)
                         {
                             sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
-                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
+                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs((weightTable["____wwwww"])))
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
@@ -244,7 +248,7 @@ namespace WebApplication1.Helper
                         myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                         newWhiteScores[J, I] = (side == 1) ? selfScore : enemyScore;
                         newBlackScores[J, I] = (side == 1) ? enemyScore : selfScore;
-                        if (Math.Abs(selfScore) >= int.Parse(weightTable["____wwwww"][1]))
+                        if (Math.Abs(selfScore) >= (weightTable["____wwwww"]))
                         {
                             return new Tuple<int, int>(myMove[index].y, myMove[index].x);
                         }
