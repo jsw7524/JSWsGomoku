@@ -40,7 +40,7 @@ namespace WebApplication1.Helper
         private const int DepthLimit = 8;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int PatentStringToInt(string patent)
+        public int PatentStringToInt(char[] patent)
         {
             int index = 0;
             foreach (var p in patent)
@@ -66,7 +66,7 @@ namespace WebApplication1.Helper
         public void LoadWeightTable()
         {
             var patterns = File.ReadAllLines(HttpContext.Current.Server.MapPath("~/Helper/JSW.dll"));
-            weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => PatentStringToInt(a[0]), b => int.Parse(b[1]));
+            weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => PatentStringToInt(a[0].ToArray()), b => int.Parse(b[1]));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -104,9 +104,9 @@ namespace WebApplication1.Helper
                     }
 
                 }
-                StringBuilder sb = new StringBuilder(9);
-                sb.Append(pattern);
-                sum += (weightTable[PatentStringToInt(sb.ToString())]);  ///////////???????????????????????????????????????
+                //StringBuilder sb = new StringBuilder(9);
+                //sb.Append(pattern);
+                sum += (weightTable[PatentStringToInt(pattern)]);  ///////////???????????????????????????????????????
             }
             return sum;
         }
@@ -161,7 +161,8 @@ namespace WebApplication1.Helper
                             myMove[index].y = J;
                             myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                             /**/
-                            if (Math.Abs(selfScore) >= Math.Abs((weightTable[PatentStringToInt("____wwwww")])))
+                            //if (Math.Abs(selfScore) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
+                            if (Math.Abs(selfScore) >= 100000)
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
@@ -218,7 +219,8 @@ namespace WebApplication1.Helper
                         if (testBoard[J, I] == 0)
                         {
                             sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
-                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs((weightTable[PatentStringToInt("____wwwww")])))
+                            //if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
+                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= 100000 )
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
@@ -272,7 +274,8 @@ namespace WebApplication1.Helper
                         myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                         newWhiteScores[J, I] = (side == 1) ? selfScore : enemyScore;
                         newBlackScores[J, I] = (side == 1) ? enemyScore : selfScore;
-                        if (Math.Abs(selfScore) >= (weightTable[PatentStringToInt("____wwwww")]))
+                        //if (Math.Abs(selfScore) >= (weightTable[PatentStringToInt("____wwwww".ToArray())]))
+                        if (Math.Abs(selfScore) >= 100000)
                         {
                             return new Tuple<int, int>(myMove[index].y, myMove[index].x);
                         }

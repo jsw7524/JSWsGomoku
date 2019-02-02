@@ -54,6 +54,15 @@
             top: 0px;    
             visibility: hidden;   
         }
+        .dot {
+            height: 5px;
+            width: 5px;
+            background-color: red;
+            border-radius: 50%;
+            position: fixed;
+            top: 235px;
+            left: 235px;
+        }
     </style>
     <meta name="viewport" content="width=device-width" />
     <script src="~/Scripts/jquery-1.10.2.min.js"></script>
@@ -62,14 +71,15 @@
 <body>
     <div id="wholeBody">
         <div>
-            <table id="TheBoard" style="width: 450px;height:450px">
+            <span class="dot"></span>
+            <table id="TheBoard" style="width: 450px; height: 450px">
                 @{
                     for (int row = 0; row < 15; row++)
                     {
                         <tr height="6%">
                             @for (int col = 0; col < 15; col++)
                             {
-                                <td id="@(row+"+"+col)" width="6%">@*@row,@col*@</td>
+                                <td id="@(row + "+" + col)" width="6%" >@*@row,@col*@</td>
                             }
                         </tr>
                     }
