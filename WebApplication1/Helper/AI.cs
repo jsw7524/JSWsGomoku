@@ -33,11 +33,15 @@ namespace WebApplication1.Helper
             internal int score;
         };
 
+        private MaxScoreFirstComparer maxScoreFirstComparer = new MaxScoreFirstComparer();
+        private MinScoreFirstComparer minScoreFirstComparer = new MinScoreFirstComparer();
+
+
         public int[,] MyTable;
 
         private Dictionary<int, int> weightTable;
 
-        private const int DepthLimit = 8;
+        private const int DepthLimit = 6;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int PatentStringToInt(char[] patent)
@@ -61,23 +65,20 @@ namespace WebApplication1.Helper
             }
             return index;
         }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void LoadWeightTable()
         {
             var patterns = File.ReadAllLines(HttpContext.Current.Server.MapPath("~/Helper/JSW.dll"));
             weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => PatentStringToInt(a[0].ToArray()), b => int.Parse(b[1]));
         }
-
+        int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int Evaluate(int y, int x, int c, int[,] testBoard)
         {
-
-            int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
             int sum = 0;
-            char[] pattern = new char[9];
             for (int I = 0; I < 4; I++)
             {
+                int index = 0;
                 for (int K = -4; K < 5; K++)
                 {
                     int j = K + 4;
@@ -86,13 +87,16 @@ namespace WebApplication1.Helper
                         switch (testBoard[(y + K * direct[I, 0]), (x + K * direct[I, 1])])
                         {
                             case 0:
-                                pattern[j] = '_';
+                                //pattern[j] = '_';
+                                index += 1;
                                 break;
                             case 1:
-                                pattern[j] = 'w';
+                                //pattern[j] = 'w';
+                                index += 2;
                                 break;
                             case -1:
-                                pattern[j] = 'b';
+                                //pattern[j] = 'b';
+                                index += 3;
                                 break;
                             default:
                                 break;
@@ -100,13 +104,18 @@ namespace WebApplication1.Helper
                     }
                     else
                     {
-                        pattern[j] = ((c == 1) ? 'b' : 'w');
+                        if (c == 1)
+                        {
+                            index += 3;
+                        }
+                        else
+                        {
+                            index += 2;
+                        }
                     }
-
+                    index *= 3;
                 }
-                //StringBuilder sb = new StringBuilder(9);
-                //sb.Append(pattern);
-                sum += (weightTable[PatentStringToInt(pattern)]);  ///////////???????????????????????????????????????
+                sum += (weightTable[index]);
             }
             return sum;
         }
@@ -114,7 +123,6 @@ namespace WebApplication1.Helper
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int[,] RangeUpdate(int y, int x, int c, int[,] testBoard, int[,] scoreBoard)
         {
-            int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
             int[,] newScoreBoard = scoreBoard.Clone() as int[,];
             for (int I = 0; I < 4; I++)
             {
@@ -160,18 +168,15 @@ namespace WebApplication1.Helper
                             myMove[index].x = I;
                             myMove[index].y = J;
                             myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
-                            /**/
-                            //if (Math.Abs(selfScore) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
                             if (Math.Abs(selfScore) >= 100000)
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
-                            /**/
                             index++;
                         }
                     }
                 }
-                Array.Sort(myMove, new MaxScoreFirstComparer());
+                Array.Sort(myMove,  maxScoreFirstComparer);
                 int max = int.MinValue;
                 int min = int.MaxValue;
                 for (int I = 0; I < index && I < 10; I++)
@@ -219,27 +224,10 @@ namespace WebApplication1.Helper
                         if (testBoard[J, I] == 0)
                         {
                             sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
-                            //if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
                             if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= 100000 )
                             {
                                 return (side == 1) ? 10000000 : -10000000;
                             }
-
-                            //int selfScore = 0;
-                            //int enemyScore = 0;
-                            //testBoard[J, I] = (side == 1) ? -1 : 1;
-                            //enemyScore = Evaluate(J, I, (side == 1) ? -1 : 1, testBoard);
-                            //sumOfScores += enemyScore;
-                            //testBoard[J, I] = side;
-                            //selfScore = Evaluate(J, I, side, testBoard);
-                            //sumOfScores += selfScore;
-                            //testBoard[J, I] = 0;
-                            ///**/
-                            //if (Math.Abs(selfScore) >= Math.Abs(int.Parse(weightTable["____wwwww"][1])))
-                            //{
-                            //    return (side == 1) ? 10000000 : -10000000;
-                            //}
-                            ///**/
                         }
                     }
                 }
@@ -274,7 +262,6 @@ namespace WebApplication1.Helper
                         myMove[index].score = Math.Abs(selfScore) + Math.Abs(enemyScore);
                         newWhiteScores[J, I] = (side == 1) ? selfScore : enemyScore;
                         newBlackScores[J, I] = (side == 1) ? enemyScore : selfScore;
-                        //if (Math.Abs(selfScore) >= (weightTable[PatentStringToInt("____wwwww".ToArray())]))
                         if (Math.Abs(selfScore) >= 100000)
                         {
                             return new Tuple<int, int>(myMove[index].y, myMove[index].x);
@@ -284,7 +271,7 @@ namespace WebApplication1.Helper
                     }
                 }
             }
-            Array.Sort(myMove, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
+            Array.Sort(myMove, (side == 1) ? (IComparer<Move>)( maxScoreFirstComparer) : (IComparer<Move>)( minScoreFirstComparer));
             int max = int.MinValue;
             int min = int.MaxValue;
             MinMaxFunctionDelegate minMaxFunctionDelegate = new MinMaxFunctionDelegate(MinMax);
@@ -303,7 +290,7 @@ namespace WebApplication1.Helper
             {
                 WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
             }
-            Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)(new MaxScoreFirstComparer()) : (IComparer<Move>)(new MinScoreFirstComparer()));
+            Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)( maxScoreFirstComparer) : (IComparer<Move>)(minScoreFirstComparer));
             return new Tuple<int, int>(myMove[0].y, myMove[0].x);
         }
 

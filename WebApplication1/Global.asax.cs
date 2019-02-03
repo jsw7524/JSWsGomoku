@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -20,6 +21,7 @@ namespace WebApplication1
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             myAI = new AI();
             myAI.LoadWeightTable();
+            Debug.WriteLine("LoadWeightTable");
         }
     }
 }
