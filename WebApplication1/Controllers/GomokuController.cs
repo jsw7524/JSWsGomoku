@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -13,11 +14,30 @@ namespace WebApplication1.Controllers
         Random rand = new Random();
         Rule rule = new Rule();
 
+        public GomokuController() :base()
+        {
+            Debug.WriteLine("GomokuController");
+        }
         
         private int roundCount = 0;
         public ActionResult Play()
         {
             return View();
+        }
+
+        public ActionResult AIGoesFirst( int side = -1)
+        {
+            rule.myTable =  new int[15, 15];
+            roundCount = 1;
+
+
+            rule.myTable[7,7] = (side == 1) ? -1 : 1; ;
+            
+
+            roundCount++;
+            TempData["roundCount"] = roundCount;
+            TempData["myTable"] = rule.myTable;
+            return Json(new { yAI = 7, xAI =7, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "OK, AI Goes First!" }, JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult AI(int posY, int posX,int side=-1)
@@ -29,6 +49,11 @@ namespace WebApplication1.Controllers
 
             rule.myTable = (int[,])TempData["myTable"] ?? new int[15, 15];
             roundCount = (int?) TempData["roundCount"] ?? 0;
+
+            //if (roundCount == 0)
+            //{
+            //    rule.myTable[7,7] = 1;
+            //}
 
             //Player Part
             rule.myTable[posY, posX] = side;
@@ -50,7 +75,7 @@ namespace WebApplication1.Controllers
                 TempData["myTable"] = rule.myTable;
                 roundCount++;
                 TempData["roundCount"] = roundCount;
-                return Json(new { yAI = posY, xAI = posX+1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet); 
+                return Json(new { yAI = posY, xAI = posX + 1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet);
             }
 
             MvcApplication.myAI.MyTable = rule.myTable;
