@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -66,11 +68,51 @@ namespace WebApplication1.Helper
             return index;
         }
 
+        long LongRandom(Random rand)
+        {
+            byte[] buf = new byte[8];
+            rand.NextBytes(buf);
+            long longRand = BitConverter.ToInt64(buf, 0);
+            return longRand;
+        }
+        long[,] ZobristTable = new long[225, 2];
+        public void MakeZobristTable()
+        {
+            var rnd = new Random(7524);
+            for (int i = 0; i < 15; i++)
+            {
+                for (int j = 0; j < 15; j++)
+                {
+                    ZobristTable[i * j, 0] = LongRandom(rnd);
+                    ZobristTable[i * j, 1] = LongRandom(rnd);
+                }
+            }
+
+        }
+
+        public long ComputeCurrentZobristHash()
+        {
+            long zobristHash = 0;
+            for (int i = 0; i < 15; i++)
+            {
+                for (int j = 0; j < 15; j++)
+                {
+                    if (MyTable[i, j] != 0)
+                    {
+                        zobristHash = zobristHash ^ ZobristTable[i * j, (MyTable[i, j] == 1) ? 1 : 0];
+                    }
+                }
+            }
+            return zobristHash;
+        }
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void LoadWeightTable()
         {
             var patterns = File.ReadAllLines(HttpContext.Current.Server.MapPath("~/Helper/JSW.dll"));
             weightTable = patterns.Select(p => p.Split(' ')).ToDictionary(a => PatentStringToInt(a[0].ToArray()), b => int.Parse(b[1]));
+            MakeZobristTable();
         }
         int[,] direct = new int[4, 2] { { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 } }; //YX
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -105,7 +147,7 @@ namespace WebApplication1.Helper
                                 break;
                         }
 
-                        
+
                     }
                     else
                     {
@@ -153,8 +195,25 @@ namespace WebApplication1.Helper
             return newScoreBoard;
         }
 
-        private int MinMax(int y, int x, int[,] testBoard, int side, int depth, int alpha, int beta, int[,] whiteScores, int[,] blackScores)
+        private long leafCount = 0;
+
+
+        private int MinMax(int y, int x, int[,] testBoard, int side, int depth, int alpha, int beta, int[,] whiteScores, int[,] blackScores, long zobrist)
         {
+            zobrist = zobrist ^ ZobristTable[y*x, (side == 1) ? 1 : 0];
+            if (concurrentDictionary.ContainsKey(zobrist))
+            {
+                int s=0;
+                concurrentDictionary.TryGetValue(zobrist,out s);
+                if (s != 0)
+                {
+                    return s;
+                }
+            }
+
+
+
+
             int[,] newWhiteScores = RangeUpdate(y, x, 1, testBoard, whiteScores);
             int[,] newBlackScores = RangeUpdate(y, x, -1, testBoard, blackScores);
             if (depth < DepthLimit)
@@ -183,6 +242,7 @@ namespace WebApplication1.Helper
                             //if (Math.Abs(selfScore) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
                             if (Math.Abs(selfScore) >= 100000)
                             {
+                                concurrentDictionary.TryAdd(zobrist,(side == 1) ? 10000000 : -10000000);
                                 return (side == 1) ? 10000000 : -10000000;
                             }
                             /**/
@@ -190,14 +250,14 @@ namespace WebApplication1.Helper
                         }
                     }
                 }
-                Array.Sort(myMove,  maxScoreFirstComparer);
+                Array.Sort(myMove, maxScoreFirstComparer);
                 int max = int.MinValue;
                 int min = int.MaxValue;
                 for (int I = 0; I < index && I < 10; I++)
                 {
                     int selfScore = 0;
                     testBoard[(myMove[I].y), (myMove[I].x)] = side;
-                    selfScore = MinMax(myMove[I].y, myMove[I].x, testBoard, (side == 1 ? -1 : 1), depth + 1, alpha, beta, newWhiteScores, newBlackScores);
+                    selfScore = MinMax(myMove[I].y, myMove[I].x, testBoard, (side == 1 ? -1 : 1), depth + 1, alpha, beta, newWhiteScores, newBlackScores, zobrist);
                     testBoard[(myMove[I].y), (myMove[I].x)] = 0;
                     if (side == 1)
                     {
@@ -223,9 +283,12 @@ namespace WebApplication1.Helper
                     }
                     if (alpha >= beta)
                     {
+                        concurrentDictionary.TryAdd(zobrist, (side == 1 ? max : min));
                         return (side == 1 ? max : min);
                     }
                 }
+
+                concurrentDictionary.TryAdd(zobrist, (side == 1 ? max : min));
                 return (side == 1 ? max : min);
             }
             else
@@ -239,8 +302,9 @@ namespace WebApplication1.Helper
                         {
                             sumOfScores += (newWhiteScores[J, I] + newBlackScores[J, I]);
                             //if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= Math.Abs((weightTable[PatentStringToInt("____wwwww".ToArray())])))
-                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= 100000 )
+                            if (((side == 1) ? Math.Abs(newWhiteScores[J, I]) : newBlackScores[J, I]) >= 100000)
                             {
+                                concurrentDictionary.TryAdd(zobrist, (side == 1) ? 10000000 : -10000000);
                                 return (side == 1) ? 10000000 : -10000000;
                             }
 
@@ -262,15 +326,22 @@ namespace WebApplication1.Helper
                         }
                     }
                 }
+
+                concurrentDictionary.TryAdd(zobrist, sumOfScores);
                 return sumOfScores;
             }
         }
 
         private delegate int MinMaxFunctionDelegate(int y, int x, int[,] testBoard, int side, int depth, int alpha,
-            int beta, int[,] whiteScores, int[,] blackScores);
+            int beta, int[,] whiteScores, int[,] blackScores, long zobrist);
+
+        ConcurrentDictionary<long, int> concurrentDictionary = new ConcurrentDictionary<long, int>(16, 10000000);
 
         public Tuple<int, int> NextMove(int side)
         {
+            concurrentDictionary.Clear();
+            leafCount = 0;
+            long zobristHash = ComputeCurrentZobristHash();
             Move[] myMove = new Move[256];
             int index = 0;
             int[,] newWhiteScores = new int[15, 15];
@@ -303,16 +374,18 @@ namespace WebApplication1.Helper
                     }
                 }
             }
-            Array.Sort(myMove, (side == 1) ? (IComparer<Move>)( maxScoreFirstComparer) : (IComparer<Move>)( minScoreFirstComparer));
+            Array.Sort(myMove, (side == 1) ? (IComparer<Move>)(maxScoreFirstComparer) : (IComparer<Move>)(minScoreFirstComparer));
             int max = int.MinValue;
             int min = int.MaxValue;
             MinMaxFunctionDelegate minMaxFunctionDelegate = new MinMaxFunctionDelegate(MinMax);
             List<KeyValuePair<int, IAsyncResult>> asyncResultList = new List<KeyValuePair<int, IAsyncResult>>();
             for (int I = 0; I < index && I < 8; I++)
             {
+                long zobrist = zobristHash;
                 int[,] nextBoard = (int[,])MyTable.Clone();
                 nextBoard[(myMove[I].y), (myMove[I].x)] = side;
-                asyncResultList.Add(new KeyValuePair<int, IAsyncResult>(I, minMaxFunctionDelegate.BeginInvoke(myMove[I].y, myMove[I].x, nextBoard, (side == 1 ? -1 : 1), 0, max, min, newWhiteScores, newBlackScores, null, null)));
+                zobrist = zobrist ^ ZobristTable[(myMove[I].y) * (myMove[I].x), (nextBoard[(myMove[I].y), (myMove[I].x)] == 1) ? 1 : 0];
+                asyncResultList.Add(new KeyValuePair<int, IAsyncResult>(I, minMaxFunctionDelegate.BeginInvoke(myMove[I].y, myMove[I].x, nextBoard, (side == 1 ? -1 : 1), 0, max, min, newWhiteScores, newBlackScores, zobrist, null, null)));
                 if ((I + 1) % (Environment.ProcessorCount) == 0)
                 {
                     WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
@@ -322,7 +395,8 @@ namespace WebApplication1.Helper
             {
                 WaitAllThreads(asyncResultList, minMaxFunctionDelegate, ref myMove, side, ref max, ref min);
             }
-            Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)( maxScoreFirstComparer) : (IComparer<Move>)(minScoreFirstComparer));
+            Array.Sort(myMove, 0, 8, (side == 1) ? (IComparer<Move>)(maxScoreFirstComparer) : (IComparer<Move>)(minScoreFirstComparer));
+            Debug.WriteLine(leafCount);
             return new Tuple<int, int>(myMove[0].y, myMove[0].x);
         }
 
