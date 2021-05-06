@@ -141,8 +141,12 @@
     <div class="dropdown">
         <button onclick="myFunction()" class="dropbtn">選單</button>
         <div id="myDropdown" class="dropdown-content">
-            <a href="Play">重新開始</a>
-            <a href="javascript:LetAIGofirst();">重新開始並讓電腦先下</a>
+            @*<a href="Play">重新開始</a>*@
+            @*<a href="javascript:LetAIGofirst();">重新開始並讓電腦先下</a>*@
+            <a href="javascript:SetDifficulty(8);">沉思者AI</a>
+            <a href="javascript:SetDifficulty(6);">大師AI</a>
+            <a href="javascript:SetDifficulty(4);">普通AI(預設)</a>
+            <a href="javascript:SetDifficulty(2);">初學者AI</a>
         </div>
     </div>
     <script>
@@ -210,6 +214,15 @@
                 }
             );
             PutChessByXY(7, 7);
+        }
+
+        function SetDifficulty(d) {
+            $('#TheBoard td').css("background", "");
+            $.getJSON("/Gomoku/SetDifficulty",
+                { difficulty:d},
+                function (data) {
+                }
+            );
         }
 
         function myFunction() {

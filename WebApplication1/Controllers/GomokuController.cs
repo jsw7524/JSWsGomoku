@@ -25,6 +25,16 @@ namespace WebApplication1.Controllers
             return View();
         }
 
+        public ActionResult SetDifficulty(int difficulty)
+        {
+            MvcApplication.myAI.SetDepthLimit(difficulty);
+            rule.myTable = new int[15, 15];
+            roundCount = 0;
+            TempData["roundCount"] = roundCount;
+            TempData["myTable"] = rule.myTable;
+            return View("Play");
+        }
+
         public ActionResult AIGoesFirst( int side = -1)
         {
             rule.myTable =  new int[15, 15];
