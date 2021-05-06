@@ -27,9 +27,10 @@ namespace WebApplication1.Controllers
 
         public ActionResult SetDifficulty(int difficulty)
         {
-            MvcApplication.myAI.SetDepthLimit(difficulty);
+            //MvcApplication.myAI.SetDepthLimit(difficulty);
             rule.myTable = new int[15, 15];
             roundCount = 0;
+            Session["difficulty"] = difficulty;
             TempData["roundCount"] = roundCount;
             TempData["myTable"] = rule.myTable;
             return View("Play");
@@ -88,8 +89,22 @@ namespace WebApplication1.Controllers
                 return Json(new { yAI = posY, xAI = posX + 1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet);
             }
 
-            MvcApplication.myAI.MyTable = rule.myTable;
-            Tuple<int, int> moveAI = MvcApplication.myAI.NextMove((side == 1) ? -1 : 1);
+            AI myAI = null;
+            if (null == Session["AI"])
+            {
+                myAI = new AI();
+                myAI.LoadWeightTable();
+                Session["AI"] = myAI;
+                
+            }
+            else
+            {
+                myAI =(AI)Session["AI"];
+            }
+
+            myAI.MyTable = rule.myTable;
+            myAI.SetDepthLimit((int)(Session["difficulty"]??4));
+            Tuple<int, int> moveAI = myAI.NextMove((side == 1) ? -1 : 1);
             rule.myTable[moveAI.Item1, moveAI.Item2] = (side == 1) ? -1 : 1;
             roundCount++;
             if (rule.Referee(moveAI.Item1, moveAI.Item2, (side == 1) ? -1 : 1))

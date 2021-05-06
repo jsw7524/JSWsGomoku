@@ -43,7 +43,7 @@ namespace WebApplication1.Helper
 
         public int[,] MyTable;
 
-        private Dictionary<int, int> weightTable;
+        public Dictionary<int, int> weightTable;
 
         private int DepthLimit = 4;
 
