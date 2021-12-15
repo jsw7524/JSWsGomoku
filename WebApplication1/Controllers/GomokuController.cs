@@ -80,16 +80,19 @@ namespace WebApplication1.Controllers
             //
 
             //AI Part
+            AI myAI = null;
             if (1 == roundCount)
             {
                 rule.myTable[posY, posX + 1] = (side == 1) ? -1 : 1;
                 TempData["myTable"] = rule.myTable;
                 roundCount++;
                 TempData["roundCount"] = roundCount;
+                myAI = new AI();
+                myAI.LoadWeightTable();
+                Session["AI"] = myAI;
                 return Json(new { yAI = posY, xAI = posX + 1, sideAI = (side == 1) ? -1 : 1, flag = 0, message = "" }, JsonRequestBehavior.AllowGet);
             }
 
-            AI myAI = null;
             if (null == Session["AI"])
             {
                 myAI = new AI();
@@ -103,7 +106,7 @@ namespace WebApplication1.Controllers
             }
 
             myAI.MyTable = rule.myTable;
-            myAI.SetDepthLimit((int)(Session["difficulty"]??4));
+            myAI.SetDepthLimit((int)(Session["difficulty"]??6));
             Tuple<int, int> moveAI = myAI.NextMove((side == 1) ? -1 : 1);
             rule.myTable[moveAI.Item1, moveAI.Item2] = (side == 1) ? -1 : 1;
             roundCount++;
